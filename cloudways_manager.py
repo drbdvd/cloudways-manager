@@ -11,7 +11,7 @@ then run:
     python cloudways_manager.py server --id <SERVER_ID> start
     python cloudways_manager.py server --id <SERVER_ID> stop
     python cloudways_manager.py server --id <SERVER_ID> restart
-    python cloudways_manager.py server --id <SERVER_ID> service --name apache --action restart
+    python cloudways_manager.py server --id <SERVER_ID> service --name apache2 --action restart
     python cloudways_manager.py apps list [--server-id <SERVER_ID>]
     python cloudways_manager.py app --server-id <SERVER_ID> --app-id <APP_ID> info
     python cloudways_manager.py app --server-id <SERVER_ID> --app-id <APP_ID> credentials
@@ -272,8 +272,11 @@ class CloudwaysClient:
         deadline = time.time() + timeout
         while time.time() < deadline:
             result = self.get_operation(operation_id)
-            status = result.get("operation", {}).get("status")
-            if status in ("1", "2", 1, 2):
+            # The Cloudways API may return the status as a string or an integer
+            # depending on the API version, so we normalise to int before comparing.
+            raw_status = result.get("operation", {}).get("status")
+            status = int(raw_status) if raw_status is not None else None
+            if status in (1, 2):
                 return result
             time.sleep(poll_interval)
         raise TimeoutError(

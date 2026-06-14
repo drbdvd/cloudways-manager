@@ -36,6 +36,7 @@ Usage
 from __future__ import annotations
 
 import os
+from typing import Optional
 
 import click
 from dotenv import load_dotenv
@@ -162,14 +163,14 @@ def get_server_monitoring(
 
 
 @mcp.tool()
-def list_apps(server_id: str = "") -> list[dict]:
+def list_apps(server_id: Optional[str] = None) -> list[dict]:
     """Return all applications, optionally filtered by server.
 
     Args:
         server_id: When provided, only applications on this server are
-            returned.  Leave empty to list all applications.
+            returned.  Omit or pass ``None`` to list all applications.
     """
-    return _client().list_apps(server_id or None)
+    return _client().list_apps(server_id)
 
 
 @mcp.tool()
