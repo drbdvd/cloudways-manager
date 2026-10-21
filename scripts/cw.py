@@ -69,6 +69,11 @@ def _try_json(raw):
 
 
 def get_token(version, force=False):
+    # v2 access tokens ("cw_..." from API Integration) are used directly as the
+    # bearer; no email+api_key exchange needed. CLOUDWAYS_EMAIL is not required.
+    direct = os.environ.get("CLOUDWAYS_API_KEY", "")
+    if direct.startswith("cw_"):
+        return direct
     if not force and os.path.exists(TOKEN_CACHE):
         try:
             with open(TOKEN_CACHE) as fh:
@@ -136,6 +141,13 @@ def _kv(pairs):
 
 def cmd_token(args):
     get_token(args.api_version, force=True)
+    if os.environ.get("CLOUDWAYS_API_KEY", "").startswith("cw_"):
+        # Direct tokens are never validated by get_token; prove them with a call.
+        r = call("GET", "server", args.api_version, retry_auth=False)
+        if isinstance(r, dict) and r.get("_error"):
+            sys.exit("AUTH FAILED: %s" % json.dumps(r)[:300])
+        print("AUTH OK (api %s, direct access token)" % args.api_version)
+        return
     print("AUTH OK (api %s). Token cached at %s" % (args.api_version, TOKEN_CACHE))
 
 
